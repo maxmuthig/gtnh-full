@@ -1,0 +1,363 @@
+# GTNH Tengam Guide: Peaceful + No Rockets Challenge (UHV)
+
+**Analysis based on full source code decompilation of GTNH modpack.**
+
+---
+
+## TL;DR
+
+- **Tengam**: ONLY obtainable via Blood Magic Meteor Ritual (Mark of the Falling Tower) in a rocketless run
+- **Gaia Spirit**: The HARD BLOCKER. Cannot fight Gaia Guardian on peaceful. Alternative: **Gaia Spirit Bees** (LCR recipe), but bootstrapping the first Life Essence is the core problem
+- **Infinite Blood LP**: EEC + Well of Suffering works on peaceful (2,500 LP/sec). Self-sacrifice for bootstrapping.
+
+---
+
+## 1. ALL POSSIBILITIES TO GET TENGAM (Peaceful + No Rockets)
+
+### Source 1: Blood Magic Meteor Ritual (Mark of the Falling Tower) -- YOUR ONLY OPTION
+
+The **Ion Thruster Jet meteor** contains **Raw Tengam Ore as its filler block**. This is the ONLY pre-space method to obtain Tengam.
+
+**How to summon:**
+1. Build the Mark of the Falling Tower ritual (17x17 footprint, 100 Ritual Stones: 32 air, 16 water, 20 fire, 20 earth, 12 dusk)
+2. Activate with an **Awakened Activation Crystal** -- costs **1,000,000 LP** from soul network
+3. Throw an **Ion Thruster Jet** (the focus item) onto the Master Ritual Stone
+4. The meteor spawns above and crashes down, creating a sphere of ores with Tengam as filler
+
+**Focus Item -- Ion Thruster Jet:**
+- Assembly Line craft (check NEI for exact recipe)
+- Requires scanning a T1 Rocket Engine Jet in a Research Station
+- Available at EV+ tier
+
+**Critical tip -- Use Orbis Terrae reagent:**
+- Each Orbis Terrae (1,000 aspect ratio) increases the meteor radius by +2 blocks
+- Since Tengam is the FILLER (not the main ore), more radius = dramatically more Tengam
+- This is essential for efficiency
+
+**Setup tips:**
+- Place an unbreakable block ~35 blocks above the Master Ritual Stone
+- Do this far away from your base (explosions damage through blocks)
+- Soul Compactor (Blood Arsenal) can compact the ritual to 1 block for 318,171 LP
+
+### Source 2: Seth (Tier 9 Planet) -- BLOCKED (No Rockets)
+
+Seth is a moon in the Amun-Ra system. Primary source of Raw Tengam Ore veins (height 30-180, weight 80, size 32). Requires a Mothership or Space Elevator. **Not available in no-rocket runs.**
+
+### Source 3: Space Miner MK-III Drones -- BLOCKED (Requires Tengam to build)
+
+The Tengam asteroid exists in space mining, but the MK-III drones themselves require Tengam components. **Cannot be used as a bootstrap source.**
+
+### Source 4: Crafting/Processing -- NO RECIPE EXISTS
+
+There is NO crafting, chemical, or processing recipe that creates Tengam from other materials. It must be mined as ore.
+
+### Tengam Processing Chain (once you have Raw Tengam Ore)
+
+```
+Raw Tengam Ore
+    → Macerator → Raw Tengam Dust
+        → Electromagnetic Separator → Purified Tengam Dust (+ 10% Neodymium Magnetic, 10% Samarium Magnetic)
+            → Polarizer (UHV tier) → Attuned Tengam Dust
+```
+
+### The Grind Reality
+
+For a no-rocket run, you will need to summon this meteor **thousands of times** to get enough Tengam for progression. Tengam ore is the filler block, so each meteor gives a moderate amount. Using Orbis Terrae to maximize radius is absolutely critical.
+
+---
+
+## 2. ALL POSSIBILITIES TO GET GAIA SPIRIT (Peaceful + No Rockets)
+
+This is the hardest problem in this challenge combination. Here's every path analyzed:
+
+### What is Gaia Spirit?
+
+In GTNH, "Gaia Spirit" (Materials.GaiaSpirit) maps to the **Gaia Ingot** (Botania manaResource:14). It is crafted from:
+- 4x **Life Essence** (Botania manaResource:5) + 1x **Terrasteel Plate** → 1x Gaia Ingot
+
+The core problem is obtaining **Life Essence**.
+
+### Path A: Gaia Guardian Boss Fight -- BLOCKED (Peaceful)
+
+**Source code confirms** (`EntityDoppleganger.java:151`):
+```java
+if(par3World.difficultySetting == EnumDifficulty.PEACEFUL) {
+    player.addChatMessage("botaniamisc.peacefulNoob");
+    return false;
+}
+```
+The Gaia Guardian **cannot spawn on peaceful**. If somehow spawned, it **immediately despawns** (line 525-527). This is a hard block with no workaround in the source code.
+
+Normal drops: 8-16x Life Essence per kill (hard mode: 16).
+
+### Path B: Gaia Spirit Bees (GregTech) -- VIABLE BUT CIRCULAR DEPENDENCY
+
+**Bee:** GAIASPIRIT (GTBeeDefinition.java:2711)
+- **Parents:** NAQUADAH x TERRASTEEL
+- **Mutation chance:** 1%
+- **Mutation tier:** 3
+- **Requirement:** `requireResource("frameGtGaiaSpirit")` -- needs a Gaia Spirit frame block adjacent to the apiary
+
+**Production:** Gaia Spirit Combs (CombType.GAIASPIRIT, 15% base chance)
+
+**LCR Processing (LuV tier):**
+- Recipe 1: 4x Gaia Spirit Combs + 4x Pixie Dust + 1x Dice + 4L Elven Elementium → **4x Life Essence**
+- Recipe 2: 4x Gaia Spirit Combs + 4x Pixie Dust + 1x Dice + 2L Terrasteel → **6x Life Essence**
+
+**THE CIRCULAR DEPENDENCY PROBLEM:**
+To breed this bee, you need a `frameGtGaiaSpirit` block. To make that frame, you need Gaia Spirit material. To make Gaia Spirit, you need Life Essence. To get Life Essence, you need this bee (or the boss).
+
+**BOOTSTRAP SOLUTION:** You need to obtain ONE Gaia Spirit ingot/dust from an alternative source to break the cycle. See Path C and D below.
+
+### Path C: Mixer Recipe -- NEEDS LIFE ESSENCE (Circular)
+
+**Recipe** (MixerRecipes.java:917):
+```
+1x Terrasteel Dust + 4x Life Essence → 1x Gaia Spirit Dust (MV, 30 sec)
+```
+Still needs Life Essence as input.
+
+### Path D: Forge Hammer -- NEEDS GAIA BLOCK (Circular)
+
+**Recipe** (ForgeHammerRecipes.java:121):
+```
+1x Gaia Block + 1152L Prismatic Acid → 32x Life Essence (LuV)
+```
+But the Gaia Block is made from:
+```
+1x Bifrost Perm Block + 1296L Molten Gaia Spirit → 1x Gaia Block (IV, Fluid Solidifier)
+```
+Still circular.
+
+### Path E: EEC (Extreme Entity Crusher) with ignorePeacefulCheck config -- POSSIBLE WORKAROUND
+
+The EEC has a config option (`Config.MobHandler.ignorePeacefulCheck`, default: `false`) that, when set to `true`, allows processing hostile mob recipes on peaceful.
+
+**Source code** (MTEExtremeEntityCrusher.java:632):
+```java
+if (!recipe.recipe.isPeacefulAllowed && world.difficultySetting == PEACEFUL && !Config.MobHandler.ignorePeacefulCheck)
+    return "EEC_peaceful";
+```
+
+**However:** The Gaia Guardian is a boss mob and is unlikely to be registered as a standard EEC recipe. Even with this config, the Gaia Guardian probably won't work in the EEC. Needs in-game verification.
+
+### Path F: Quest Book Rewards -- UNVERIFIED
+
+The GTNH quest book data is stored in runtime config files not present in source code. It's possible that Life Essence or Gaia Spirit appears as a quest reward. **Check NEI and the quest book in-game** for any quests that reward:
+- Life Essence (Botania manaResource:5)
+- Gaia Ingot (Botania manaResource:14)
+- Gaia Spirit Dust (dustGaiaSpirit)
+
+### Path G: Loot Bags -- UNVERIFIED
+
+Enhanced Loot Bags content is configured at runtime. Check NEI for whether any loot bag tier contains Life Essence or Gaia Spirit items. Based on source code analysis, **no hardcoded loot bag entries for these items were found.**
+
+### Path H: Temporarily Switch Difficulty -- THE NUCLEAR OPTION
+
+Minecraft allows changing difficulty at any time. You could:
+1. Switch to Easy/Normal
+2. Spawn and kill the Gaia Guardian (get 8-16 Life Essence)
+3. Switch back to Peaceful
+4. Use the Life Essence to make 1 Gaia Spirit Ingot → 1 frameGtGaiaSpirit
+5. Bootstrap Gaia Spirit bees for infinite production
+
+**This breaks the "peaceful challenge" rules.** But it's worth noting that a SINGLE difficulty switch for ONE boss kill would unlock the entire Gaia Spirit chain permanently. If your challenge allows a one-time exception, this is by far the most efficient path.
+
+### RECOMMENDED STRATEGY (Strict Peaceful)
+
+1. **Check NEI and quest book** for any source of Life Essence or Gaia Spirit (quest rewards, loot bags)
+2. If none exist, check if `ignorePeacefulCheck` config + EEC works for the Gaia Guardian
+3. If that fails, you may need the one-time difficulty switch (Path H)
+4. Once you have 4x Life Essence + 1x Terrasteel:
+   - Mixer: 4x Life Essence + 1x Terrasteel Dust → 1x Gaia Spirit Dust
+   - Process into a Gaia Spirit frame block
+   - Breed NAQUADAH x TERRASTEEL bees with the frame → Gaia Spirit bees
+   - LCR: Gaia Spirit Combs → Life Essence (infinite loop established)
+
+---
+
+## 3. ALL POSSIBILITIES TO GET INFINITE BLOOD LP (Peaceful + No Rockets)
+
+### Tier 1: Self-Sacrifice (Early Game Bootstrap)
+
+**Sacrificial Knife** -- No mobs needed, works immediately:
+- Base: 100 LP per heart of damage
+- Each **Rune of Self-Sacrifice** adds +20 LP per rune per heart
+
+**Incense Altar Multiplier:**
+- No path: +20%
+- Wooden path: +60%
+- Stone path: +120%
+- Worn Stone path: +200%
+- **Obsidian path: +300%** (best)
+
+With Obsidian path Incense: the Sacrificial Knife becomes a Dagger that sacrifices 90% of your HP in one use.
+
+**Sustainability:** Use regeneration effects (Wand Focus: Mending, regen potions, food) between stabs.
+
+**Rate:** Very slow. Expect 3-5+ hours of manual stabbing to accumulate enough LP for basic Blood Magic infrastructure (~1.5M LP for blank slates and rituals).
+
+### Tier 2: Ritual of the Feathered Knife (Automated Self-Sacrifice)
+
+A Tier 4 ritual that automates self-sacrifice:
+- Damages all players within 31x31x41 area down to 30% HP
+- Generates **100 LP per half-heart** into nearby Blood Altar
+- Activation: 25,000 LP, refresh: 20 LP/operation
+- Scales with **Runes of Self-Sacrifice**
+- Works on peaceful (only affects players)
+- Pair with **Ritual of Regeneration** for sustainability
+- Need enough Self-Sacrifice runes for net-positive LP (100 LP generated vs 100 LP consumed per HP regen)
+
+### Tier 3: Dagger of Sacrifice with Passive Mobs/Villagers
+
+Works on peaceful since villagers and animals persist:
+- **Animals:** 250 LP per kill
+- **Villagers:** 2,000 LP per kill
+- Scales with Runes of Sacrifice (+10% per rune)
+- Automate with villager breeders for sustained LP
+
+### Tier 4: Well of Suffering with Passive Mobs
+
+The Well of Suffering ritual damages **all non-player living entities** within range:
+- Base: 25 LP per point of damage
+- Scales with Runes of Sacrifice
+- Works with villagers and animals on peaceful
+- Needs healing for mobs or continuous breeding
+- Activation: 50,000 LP
+
+### Tier 5: EEC + Well of Suffering (THE KEY BREAKTHROUGH -- EV tier)
+
+The **Extreme Entity Crusher** in **Ritual Mode** is the primary answer for peaceful LP generation:
+
+**How it works:**
+1. Build the EEC multiblock (EV tier, 480 EU/t)
+2. Enable Ritual Mode (screwdriver the controller or use GUI toggle)
+3. Place Well of Suffering Master Ritual Stone **directly above** the EEC center
+4. Blood Altar within 10 blocks vertically, 5 blocks horizontally
+5. Activate with Weak Activation Crystal (50,000 LP)
+
+**Fixed rates (mob type and sacrifice runes DON'T matter):**
+- **+2,500 LP/sec** added to Blood Altar
+- **-200 LP/sec** drained from Soul Network
+- **Net: +2,300 LP/sec** (passive, automated)
+
+**Power:** 480 EU/t (HV tier), locked
+
+**This works on peaceful mode** because the EEC doesn't physically spawn mobs.
+
+**Soul Compactor option:** Compact the Well of Suffering ritual into 1 block for 318,171 LP. Place 1-2 blocks above EEC center.
+
+### Tier 6: World Accelerators (Speed Multiplier)
+
+World Accelerators in **Tile Entity Mode** speed up Blood Altar processing:
+- LV: 2x | MV: 4x | HV: 8x | **EV: 16x**
+- Use Machine Controller Cover to toggle only when altar is active
+
+### Tier 7: Convocation of the Damned (Demon Portal)
+
+- Costs **15,000,000 LP** to activate (Archmage's Blood Orb + 13+ Runes of the Orb)
+- Opens a Demon Portal spawning Demon Grunts
+- They drop Life Shards (30%) and Soul Shards (30%)
+- Can be captured and farmed via EEC
+
+### Tier 8: Blood Orb of Armok (Avaritia -- TRUE Infinite LP)
+
+**The ultimate solution.** When in your inventory, it fills your soul network to **1,000,000,000 LP** instantly whenever it drops below that.
+
+**Recipe (Extreme Crafting Table 9x9):**
+```
+   ---aia---
+   --ababa--
+   --jacaj--
+   -dababad-
+   ddeafagdd
+   -dddhddd-
+   ---ddd---
+   ---------
+   ---------
+```
+- a = Infinity Plate
+- b = Eldritch Orb (Forbidden Magic)
+- c = Blood Infused Diamond Block (Blood Arsenal)
+- d = Cosmic Neutronium Plate
+- e = Focus of Time (Tainted Magic)
+- f = Infinity Catalyst (Avaritia Resource:5)
+- g = Focus of Eldritch (Tainted Magic)
+- h = Neutronium Large Plate (Tinker's)
+- i = Black Hole Talisman (Botania)
+- j = Sigil of Elemental Affinity (Blood Magic)
+
+**WARNING:** The Black Hole Talisman requires **Life Essence** (Gaia Spirit) to craft. This means the Armok Orb is also blocked by the Gaia Spirit problem described in Section 2.
+
+### Blood Orb Capacity Progression
+
+| Tier | Orb | Base Capacity |
+|------|-----|---------------|
+| 1 | Weak Blood Orb | 5,000 LP |
+| 2 | Apprentice Blood Orb | 25,000 LP |
+| 3 | Magician's Blood Orb | 150,000 LP |
+| 4 | Master Blood Orb | 1,000,000 LP |
+| 5 | Archmage's Blood Orb | 10,000,000 LP |
+| 6 | Transcendent Blood Orb | 30,000,000 LP |
+| 7 | Blood Orb of Armok | 1,000,000,000 LP |
+
+Each Rune of the Orb adds **+4% of base capacity**.
+
+### LP Cost Reference for Meteor Ritual
+
+- Ritual activation: **1,000,000 LP** (Awakened Activation Crystal)
+- Per-meteor LP cost varies by focus item (check NEI)
+- Standard costs: Iron Block meteor = 1M LP, Diamond meteor = 5M LP
+- Ion Thruster Jet meteor: check NEI (likely 5M+ LP)
+
+---
+
+## 4. RECOMMENDED OVERALL STRATEGY
+
+### Phase 1: Blood Magic Bootstrap (EV tier)
+1. Start with manual self-sacrifice (Sacrificial Knife + Incense Altar with Obsidian path)
+2. Build up to Tier 4 Blood Altar
+3. Build EEC multiblock
+
+### Phase 2: Automated LP Generation
+4. Set up EEC + Well of Suffering in Ritual Mode
+5. Net +2,300 LP/sec passively
+6. Build up to Tier 5-6 Blood Altar with Runes of the Orb
+
+### Phase 3: Gaia Spirit (THE BOTTLENECK)
+7. Check quest book and NEI for any non-boss source of Life Essence
+8. If none: consider one-time difficulty switch to Normal → kill Gaia Guardian → back to Peaceful
+9. Use Life Essence to make 1 Gaia Spirit frame
+10. Breed Gaia Spirit bees (NAQUADAH x TERRASTEEL, 1% chance)
+11. LCR: Gaia Spirit Combs → Life Essence (infinite chain established)
+
+### Phase 4: Tengam Meteor Farming
+12. Craft Ion Thruster Jet (Assembly Line)
+13. Set up Mark of the Falling Tower ritual
+14. Use Orbis Terrae reagent for maximum radius
+15. Farm meteors (each gives moderate Tengam ore)
+16. Process: Raw Tengam → EM Separator → Purified Tengam → Polarizer (UHV) → Attuned Tengam
+
+### Phase 5: Endgame
+17. With Gaia Spirit bees + Tengam from meteors, craft the Tengam Electromagnet and progress
+
+---
+
+## 5. KEY SOURCE CODE REFERENCES
+
+| File | Content |
+|------|---------|
+| `Botania/.../EntityDoppleganger.java:151` | Peaceful mode blocks Gaia Guardian spawn |
+| `GT5-Unofficial/.../GTBeeDefinition.java:2711` | Gaia Spirit bee definition |
+| `GT5-Unofficial/.../ItemComb.java:1348` | Gaia Spirit comb → Life Essence LCR recipes |
+| `GT5-Unofficial/.../MaterialsInit.java` | TengamRaw/Purified/Attuned material definitions |
+| `GT5-Unofficial/.../OreMixes.java:1002` | Tengam ore generation (Seth dimension only) |
+| `GT5-Unofficial/.../MTEExtremeEntityCrusher.java:632` | EEC peaceful check + config bypass |
+| `BloodMagic/.../RitualEffectSummonMeteor.java` | Meteor ritual mechanics |
+| `BloodMagic/.../MeteorRegistry.java` | Meteor config loading (JSON + MineTweaker) |
+| `BloodMagic/.../RitualEffectWellOfSuffering.java` | Well of Suffering ritual |
+| `NewHorizonsCoreMod/.../MixerRecipes.java:917` | Terrasteel + Life Essence → Gaia Spirit |
+| `NewHorizonsCoreMod/.../ForgeHammerRecipes.java:121` | Gaia Block → 32x Life Essence |
+| `Avaritia/.../ItemOrbArmok.java` | Blood Orb of Armok (infinite LP) |
+| `Avaritia/.../Bloody.java` | Armok Orb registration |
+| `NewHorizonsCoreMod/.../ScriptAvaritia.java:413` | GTNH Armok Orb recipe (Extreme Crafting) |
