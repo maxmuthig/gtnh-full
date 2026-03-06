@@ -236,7 +236,18 @@ If you define pacifism as "no harming any living being" (including yourself and 
 - **Tier 7 (Convocation): BLOCKED** -- involves spawning and killing demons
 - **Tier 8 (Blood Orb of Armok): BLOCKED** -- requires Gaia Spirit (see Section 2)
 
-**THE BOOTSTRAP PROBLEM FOR STRICT PACIFISTS:** To reach Tier 5 (EEC), you need ~50,000 LP for the Well of Suffering activation + enough LP for crafting Blood Magic infrastructure. Without self-sacrifice or mob sacrifice, there is NO way to generate the initial LP. Blood Magic is entirely predicated on sacrifice. This may be a second hard wall.
+**THE BOOTSTRAP QUESTION FOR STRICT PACIFISTS:**
+
+**If self-harm is acceptable** (you only object to harming OTHER living beings):
+- Self-sacrifice with the Sacrificial Knife works. It reduces your HP to 10% -- it does NOT kill you.
+- You regenerate naturally (food, potions, etc.) and repeat.
+- This is enough to bootstrap all of Blood Magic including EEC Ritual Mode.
+- Tiers 1, 2, and 5 are all available. Only Tiers 3, 4, and 7 (which harm other entities) are blocked.
+
+**If ALL harm is unacceptable** (including to yourself):
+- There is NO way to generate LP. Blood Magic is entirely predicated on sacrifice.
+- Without LP, no Blood Altar recipes, no rituals, no meteor summoning.
+- This is a second hard wall blocking Tengam (via meteor) AND everything else in Blood Magic.
 
 ### Tier 1: Self-Sacrifice (Early Game Bootstrap)
 
