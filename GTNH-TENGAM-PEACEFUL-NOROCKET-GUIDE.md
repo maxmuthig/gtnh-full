@@ -23,14 +23,19 @@ The **Ion Thruster Jet meteor** (`CheatyVeryLowQuantityRawTengam.json`) contains
 
 The meteor config has `"cost": 1000000001` (1,000,000,001 LP). This is syphoned directly from the soul network per summon. Analysis of LP capacity limits:
 
-| Orb | Base LP | Max with ~300 Runes of the Orb | Enough for 1B? |
+| Orb | Base LP | Max with ~300 Runes of the Orb | Enough for 1B+1? |
 |-----|---------|-------------------------------|----------------|
 | Transcendent Blood Orb (T6) | 30,000,000 | ~390,000,000 | NO |
-| Blood Orb of Armok (Avaritia) | 1,000,000,000 (auto-fill) | 1,000,000,000 | YES |
+| Blood Orb of Armok (in inventory) | 1,000,000,000 | 1,000,000,000 | **NO (1 LP SHORT!)** |
+| Blood Orb of Armok (in altar + 1 Rune of Orb) | 1,000,000,000 | 1,040,000,000 | YES |
 
-**The math:** `orbCapacityMultiplier = 1 + 0.04 × runeCount`. To reach 1B with a 30M orb: need `1B/30M ≈ 33.3` multiplier → need `808+ Runes of the Orb`. A T6 altar has ~200-300 total rune slots (across ALL rune types), so this is **physically impossible**.
+**The "off by one" trap:** The Armok Orb's `onUpdate()` (when in player inventory) calls `addCurrentEssenceToMaximum(owner, MAX_VALUE, 1000000000)` — capping at exactly 1B. But the meteor costs 1B+1. **The Armok Orb in your inventory alone is 1 LP short!**
 
-**Therefore:** The Tengam meteor REQUIRES the **Blood Orb of Armok**, which requires **Gaia Spirit** to craft (Black Hole Talisman component). This means **Tengam is gated behind Gaia Spirit**.
+**The solution:** Place the Armok Orb **in a Blood Altar with at least 1 Rune of the Orb**. The altar uses `getMaxEssence() * orbCapacityMultiplier` as the network maximum (`TEAltar.java:637`). With 1 rune: `1B * 1.04 = 1,040,000,000` LP — enough.
+
+**The math for Transcendent Orb:** `orbCapacityMultiplier = 1 + 0.04 × runeCount`. To reach 1B with a 30M orb: need `1B/30M ≈ 33.3` multiplier → need `808+ Runes of the Orb`. A T6 altar has ~200-300 total rune slots (across ALL rune types), so this is **physically impossible**.
+
+**Therefore:** The Tengam meteor REQUIRES the **Blood Orb of Armok in a Blood Altar with Rune(s) of the Orb**, which requires **Gaia Spirit** to craft (Black Hole Talisman component). This means **Tengam is gated behind Gaia Spirit**.
 
 **How to summon (once you have Armok Orb):**
 1. Build the Mark of the Falling Tower ritual (17x17 footprint, 100 Ritual Stones: 32 air, 16 water, 20 fire, 20 earth, 12 dusk)
@@ -402,7 +407,7 @@ World Accelerators in **Tile Entity Mode** speed up Blood Altar processing:
 
 ### Tier 8: Blood Orb of Armok (Avaritia -- TRUE Infinite LP)
 
-**The ultimate solution.** When in your inventory, it fills your soul network to **1,000,000,000 LP** instantly whenever it drops below that.
+**The ultimate solution.** When in your inventory, it fills your soul network to **1,000,000,000 LP** instantly. **BUT** — this is exactly 1 LP short of the Tengam meteor cost (1,000,000,001). To reach 1B+1 LP, place the Armok Orb **in a Blood Altar** with at least **1 Rune of the Orb** — the altar applies `orbCapacityMultiplier` to raise the cap to 1,040,000,000+ LP (`TEAltar.java:637`).
 
 **Recipe (Extreme Crafting Table 9x9):**
 ```
@@ -511,7 +516,13 @@ The `activateRitual()` method (TEMasterStone.java:204-297) and `startRitual()` (
 **Activation Crystal is NOT consumed** (`ActivationCrystal.java:60`):
 - The Awakened Activation Crystal is reusable indefinitely
 - It must be pre-bound to a player (right-click while holding) — the soul network used is the CRYSTAL OWNER's, not the FakePlayer's (`BlockMasterStone.java:83`: `IBindable.getOwnerName(playerItem)`)
-- The Armok Orb must be in the crystal owner's inventory for auto-refill to work
+
+**CRITICAL: Armok Orb must be in the ALTAR, not inventory** (`TEAltar.java:632-637`):
+- The Armok Orb in inventory auto-fills to exactly 1,000,000,000 LP — **1 LP short** of the 1,000,000,001 meteor cost
+- Place the Armok Orb **in a Blood Altar** with at least **1 Rune of the Orb**
+- The altar uses `getMaxEssence() * orbCapacityMultiplier` = `1B * 1.04` = 1,040,000,000 LP cap
+- The altar auto-fills (via `isFilledForFree()`) every tick to this higher cap
+- This gives enough LP for the meteor summon
 
 **MRS has NO inventory interface** (no IInventory, no ISidedInventory):
 - Hoppers, AE2 buses, and pipes CANNOT insert items directly
@@ -521,7 +532,8 @@ The `activateRitual()` method (TEMasterStone.java:204-297) and `startRitual()` (
 **Per cycle cost:**
 - 1x Ion Thruster Jet (consumed)
 - 100,000 LP (ritual activation) + 1,000,000,001 LP (meteor cost) = ~1B LP total
-- Armok Orb auto-refills to 1B instantly — effectively free
+- Armok Orb in altar auto-refills to 1.04B (with 1 Rune of Orb) — effectively free
+- **NOTE:** Refill rate depends on altar tick speed. Use World Accelerators on the altar for faster refill between meteors
 
 ### Maximizing Tengam Yield: Orbis Terrae
 
@@ -601,7 +613,7 @@ Raw Tengam Ore (from meteor)
     - 11x Cosmic Neutronium Plate, 1x Focus of Time, 1x Infinity Catalyst
     - 1x Focus of Eldritch, 1x Neutronium Large Plate, 1x Black Hole Talisman
     - 2x Sigil of Elemental Affinity
-14. Armok Orb auto-fills soul network to 1,000,000,000 LP instantly
+14. Place Armok Orb **in Blood Altar** with at least 1 Rune of the Orb → fills to 1,040,000,000 LP (NOT in inventory — inventory cap is 1B, which is 1 LP short of the 1,000,000,001 meteor cost)
 
 ### Phase 5: Tengam Meteor Farming (the grind)
 15. Build Mark of the Falling Tower ritual (100 Ritual Stones: 32 air, 16 water, 20 fire, 20 earth, 12 dusk)
