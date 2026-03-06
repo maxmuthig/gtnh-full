@@ -59,13 +59,9 @@ The meteor config has `"cost": 1000000001` (1,000,000,001 LP). This is syphoned 
 
 Seth is a moon in the Amun-Ra system. Primary source of Raw Tengam Ore veins (height 30-180, weight 80, size 32). Requires a Mothership or Space Elevator. **Not available in no-rocket runs.**
 
-### Source 2b: "Cheaty" Tengam Meteor -- BLOCKED (Requires Space)
+### Source 2b: Note on "Cheaty" Tengam Meteor Name
 
-**File:** `GT-New-Horizons-Modpack/config/BloodMagic/meteors/CheatyVeryLowQuantityRawTengam.json`
-- Contains `oreTengamRaw:1` as filler (very low quantity, hence the name)
-- **Focus item:** `GalacticraftAmunRa:tile.machines2:1` -- requires Amun-Ra mod (space travel)
-- **Cost:** 1,000,000,001 LP
-- **BLOCKED** for both no-rocket AND LP cost reasons
+The `CheatyVeryLowQuantityRawTengam.json` config IS the Ion Thruster Jet meteor described in Source 1. The "Cheaty" name refers to how little Tengam it gives (weight 1 filler in a salt-dominated meteor), and the 1B LP cost makes it only accessible with the Blood Orb of Armok. There is no separate "normal" Tengam meteor — this IS the GTNH wiki's "only way to get Tengam before Space Miner MK-III."
 
 ### Source 2c: T9 Ores Meteor -- BLOCKED (Deep Endgame)
 
