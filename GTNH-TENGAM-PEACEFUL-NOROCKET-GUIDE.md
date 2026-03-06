@@ -130,9 +130,16 @@ if(par3World.difficultySetting == EnumDifficulty.PEACEFUL) {
     return false;
 }
 ```
-The Gaia Guardian **cannot spawn on peaceful**. If somehow spawned, it **immediately despawns** (line 525-527). This is a hard block with no workaround in the source code.
+The Gaia Guardian **cannot spawn on peaceful**. Additionally, `onLivingUpdate()` checks difficulty **every tick** (line 525-527) — if the world switches to Peaceful while the boss is alive, it calls `setDead()` (NOT `onDeath()`), meaning it **vanishes with NO drops**.
 
-Normal drops: 8-16x Life Essence per kill (hard mode: 16).
+**Anti-cheese measures:**
+- Real player must stay within 15 blocks of the beacon or the boss despawns (no drops) (line 580-581)
+- `isTruePlayer()` rejects FakePlayer, `[...]` names, and "ComputerCraft" — machines CANNOT damage it
+- Damage capped at 40/hit (60 for crits), hard mode applies 0.6x multiplier
+- Flight disabled, beneficial potion effects stripped, bear traps/magnets broken on contact
+- Cannot switch to Peaceful mid-fight — `setDead()` produces zero loot
+
+Normal drops: 8x Life Essence per kill (first attacker), 6x per additional player. Hard mode: 16x + 10x + Dice of Fate.
 
 ### Path B: Gaia Spirit Bees (GregTech) -- VIABLE BUT CIRCULAR DEPENDENCY
 
@@ -247,10 +254,10 @@ The Gaia Guardian checks `world.difficultySetting == EnumDifficulty.PEACEFUL`, N
 
 Minecraft allows changing difficulty at any time. You could:
 1. Switch to Easy/Normal
-2. Spawn and kill the Gaia Guardian (get 8-16 Life Essence)
-3. Switch back to Peaceful
-4. Use the Life Essence to make 1 Gaia Spirit Ingot → 1 frameGtGaiaSpirit
-5. Bootstrap Gaia Spirit bees for infinite production
+2. Spawn and kill the Gaia Guardian (get 8x Life Essence)
+3. **IMPORTANT: Do NOT switch back to Peaceful until the boss is dead and loot is dropped.** Switching to Peaceful mid-fight triggers `setDead()` which produces ZERO drops (confirmed: `onLivingUpdate()` line 525-527 calls `setDead()`, not `onDeath()`)
+4. Switch back to Peaceful AFTER collecting loot
+5. Use the Life Essence to craft Black Hole Talisman → Armok Orb
 
 **This breaks the "peaceful challenge" rules.** But a SINGLE difficulty switch for ONE boss kill would unlock the entire Gaia Spirit chain permanently. However, the bee path also needs a Dice of Fate (Gaia Guardian II hard mode drop), so you'd need to kill the hard-mode guardian too.
 
