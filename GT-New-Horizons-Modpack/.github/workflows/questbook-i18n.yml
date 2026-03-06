@@ -1,0 +1,35 @@
+name: Quest Book I18N
+
+on:
+  push:
+    branches: [ master, release/** ]
+    paths:
+      - config/betterquesting/DefaultQuests/QuestLinesOrder.txt
+      - config/betterquesting/DefaultQuests/QuestLines/*.json
+      - config/betterquesting/DefaultQuests/Quests/*/*.json
+  workflow_dispatch: { }
+
+jobs:
+  i18n:
+    name: Generate Quest Book I18N Files
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+      - name: Generate Quest Book I18N Files
+        run: python .github/scripts/questbook-i18n.py
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          title: Update Quest Book I18N
+          body: Automated changes by Quest Book I18N workflow.
+          commit-message: Update Quest Book I18N
+          delete-branch: true
+          branch: quest-book-i18n/patch
