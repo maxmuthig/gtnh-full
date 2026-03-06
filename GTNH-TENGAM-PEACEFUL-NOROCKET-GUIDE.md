@@ -6,29 +6,43 @@
 
 ## TL;DR
 
-- **Tengam**: ONLY obtainable via Blood Magic Meteor Ritual (Mark of the Falling Tower) in a rocketless run
-- **Gaia Spirit**: The HARD BLOCKER. Cannot fight Gaia Guardian on peaceful. "Life Essence" in Botania = "Gaia Spirit" (same item, internal vs display name). Every path to obtain it traces back to killing the Gaia Guardian.
-- **STRICT PACIFIST NOTE**: If you won't harm ANY living being (including self-sacrifice and the Gaia Guardian), Gaia Spirit is **completely unobtainable**. No loot bags, no quest rewards (confirmed via quest DB analysis), no Blood Magic meteors (circular dependency), no crafting-from-scratch recipes exist.
-- **Infinite Blood LP**: EEC + Well of Suffering works on peaceful (2,500 LP/sec). Self-sacrifice for bootstrapping. **But self-sacrifice harms the player** -- may conflict with strict pacifism.
+- **Gaia Spirit**: The ROOT BLOCKER. Cannot fight Gaia Guardian on peaceful. "Life Essence" in Botania = "Gaia Spirit" (same item, internal vs display name). Every path to obtain it traces back to killing the Gaia Guardian.
+- **Tengam**: ONLY obtainable via Blood Magic Meteor Ritual (Ion Thruster Jet focus). **BUT** the meteor costs **1,000,000,001 LP**, which requires the **Blood Orb of Armok** (Avaritia). The Armok Orb requires **Gaia Spirit** to craft. Therefore, **Tengam is ALSO gated behind Gaia Spirit**.
+- **STRICT PACIFIST NOTE**: If you won't harm ANY living being (including self-sacrifice and the Gaia Guardian), both Gaia Spirit AND Tengam are **completely unobtainable**. No loot bags, no quest rewards (confirmed via quest DB analysis), no Blood Magic meteors (circular), no synthesis recipes exist.
+- **Infinite Blood LP**: EEC + Well of Suffering works on peaceful (2,500 LP/sec). Self-sacrifice for bootstrapping. **But** max LP with T6 altar + Transcendent Orb is ~390M (with all rune slots as Runes of the Orb). Only the **Armok Orb** (requires Gaia Spirit) can reach 1B LP for the Tengam meteor.
 
 ---
 
 ## 1. ALL POSSIBILITIES TO GET TENGAM (Peaceful + No Rockets)
 
-### Source 1: Blood Magic Meteor Ritual (Mark of the Falling Tower) -- YOUR ONLY OPTION
+### Source 1: Blood Magic Meteor Ritual (Mark of the Falling Tower) -- YOUR ONLY OPTION (BUT GATED)
 
-The **Ion Thruster Jet meteor** contains **Raw Tengam Ore as its filler block**. This is the ONLY pre-space method to obtain Tengam.
+The **Ion Thruster Jet meteor** (`CheatyVeryLowQuantityRawTengam.json`) contains **Raw Tengam Ore as its filler block**. This is the ONLY pre-space method to obtain Tengam.
 
-**How to summon:**
+**CRITICAL LP COST ISSUE:**
+
+The meteor config has `"cost": 1000000001` (1,000,000,001 LP). This is syphoned directly from the soul network per summon. Analysis of LP capacity limits:
+
+| Orb | Base LP | Max with ~300 Runes of the Orb | Enough for 1B? |
+|-----|---------|-------------------------------|----------------|
+| Transcendent Blood Orb (T6) | 30,000,000 | ~390,000,000 | NO |
+| Blood Orb of Armok (Avaritia) | 1,000,000,000 (auto-fill) | 1,000,000,000 | YES |
+
+**The math:** `orbCapacityMultiplier = 1 + 0.04 × runeCount`. To reach 1B with a 30M orb: need `1B/30M ≈ 33.3` multiplier → need `808+ Runes of the Orb`. A T6 altar has ~200-300 total rune slots (across ALL rune types), so this is **physically impossible**.
+
+**Therefore:** The Tengam meteor REQUIRES the **Blood Orb of Armok**, which requires **Gaia Spirit** to craft (Black Hole Talisman component). This means **Tengam is gated behind Gaia Spirit**.
+
+**How to summon (once you have Armok Orb):**
 1. Build the Mark of the Falling Tower ritual (17x17 footprint, 100 Ritual Stones: 32 air, 16 water, 20 fire, 20 earth, 12 dusk)
-2. Activate with an **Awakened Activation Crystal** -- costs **1,000,000 LP** from soul network
+2. Activate with an **Awakened Activation Crystal** -- costs **100,000 LP** from soul network
 3. Throw an **Ion Thruster Jet** (the focus item) onto the Master Ritual Stone
-4. The meteor spawns above and crashes down, creating a sphere of ores with Tengam as filler
+4. **1,000,000,001 LP** is syphoned from soul network (Armok Orb auto-refills instantly)
+5. The meteor spawns above and crashes down, creating a sphere of ores with Tengam as filler
 
 **Focus Item -- Ion Thruster Jet:**
-- Assembly Line craft (check NEI for exact recipe)
+- Assembly Line craft at UHV tier
+- Focus item = `GalacticraftAmunRa:tile.machines2:1` -- this is the Ion Thruster Jet block
 - Requires scanning a T1 Rocket Engine Jet in a Research Station
-- Available at EV+ tier
 
 **Critical tip -- Use Orbis Terrae reagent:**
 - Each Orbis Terrae (1,000 aspect ratio) increases the meteor radius by +2 blocks
@@ -39,6 +53,7 @@ The **Ion Thruster Jet meteor** contains **Raw Tengam Ore as its filler block**.
 - Place an unbreakable block ~35 blocks above the Master Ritual Stone
 - Do this far away from your base (explosions damage through blocks)
 - Soul Compactor (Blood Arsenal) can compact the ritual to 1 block for 318,171 LP
+- With Armok Orb, you can spam meteors infinitely (LP auto-refills)
 
 ### Source 2: Seth (Tier 9 Planet) -- BLOCKED (No Rockets)
 
@@ -79,7 +94,7 @@ Raw Tengam Ore
 
 ### The Grind Reality
 
-For a no-rocket run, you will need to summon this meteor **thousands of times** to get enough Tengam for progression. Tengam ore is the filler block, so each meteor gives a moderate amount. Using Orbis Terrae to maximize radius is absolutely critical.
+Per the GTNH wiki: "You'll need to spawn this meteor **tens of thousands of times** in order to make the Space Miner MK III." Tengam ore is the filler block at very low weight (`oreTengamRaw:1`), so each meteor gives minimal Tengam. Using Orbis Terrae to maximize radius is absolutely critical. With the Armok Orb providing infinite 1B LP refills, the bottleneck becomes focus item crafting speed and chunk loading.
 
 ---
 
@@ -427,10 +442,11 @@ Each Rune of the Orb adds **+4% of base capacity**.
 
 ### LP Cost Reference for Meteor Ritual
 
-- Ritual activation: **1,000,000 LP** (Awakened Activation Crystal)
-- Per-meteor LP cost varies by focus item (check NEI)
-- Standard costs: Iron Block meteor = 1M LP, Diamond meteor = 5M LP
-- Ion Thruster Jet meteor: check NEI (likely 5M+ LP)
+- Ritual activation: **100,000 LP** (Awakened Activation Crystal)
+- Per-meteor LP cost is defined in `GT-New-Horizons-Modpack/config/BloodMagic/meteors/*.json`
+- Range: 123,456 LP (Rainbow Glass) to 1,000,000,001 LP (Tengam/BotGaia/T9Ores)
+- **Ion Thruster Jet (Tengam) meteor: 1,000,000,001 LP** -- requires Blood Orb of Armok
+- Most normal meteors: 300K-50M LP (achievable with Transcendent Blood Orb + runes)
 
 ---
 
@@ -446,22 +462,27 @@ Each Rune of the Orb adds **+4% of base capacity**.
 5. Net +2,300 LP/sec passively
 6. Build up to Tier 5-6 Blood Altar with Runes of the Orb
 
-### Phase 3: Gaia Spirit (THE BOTTLENECK)
-7. Switch to Easy + `/gamerule doMobSpawning false` (recommended), or check quest book for Life Essence
+### Phase 3: Gaia Spirit (THE ROOT BOTTLENECK -- gates BOTH itself AND Tengam)
+7. Switch to Easy + `/gamerule doMobSpawning false` (recommended)
 8. Kill Gaia Guardian (normal) for Life Essence + Gaia Guardian II (hard) for Dice of Fate
 9. Use Sword of the Cosmos for instant kills
 10. Make Gaia Spirit frame, breed Gaia Spirit bees (NAQUADAH x TERRASTEEL, 1% chance)
 11. LCR: Gaia Spirit Combs + Dice of Fate → Life Essence (infinite chain established)
 
-### Phase 4: Tengam Meteor Farming
-12. Craft Ion Thruster Jet (Assembly Line)
-13. Set up Mark of the Falling Tower ritual
-14. Use Orbis Terrae reagent for maximum radius
-15. Farm meteors (each gives moderate Tengam ore)
-16. Process: Raw Tengam → EM Separator → Purified Tengam → Polarizer (UHV) → Attuned Tengam
+### Phase 4: Armok Orb (Required for Tengam meteor)
+12. Craft Black Hole Talisman (requires Gaia Spirit)
+13. Craft Blood Orb of Armok (Extreme Crafting Table 9x9, requires Black Hole Talisman + many endgame components)
+14. Armok Orb auto-fills soul network to 1,000,000,000 LP
 
-### Phase 5: Endgame
-17. With Gaia Spirit bees + Tengam from meteors, craft the Tengam Electromagnet and progress
+### Phase 5: Tengam Meteor Farming (requires Armok Orb)
+15. Craft Ion Thruster Jet (Assembly Line, UHV tier)
+16. Set up Mark of the Falling Tower ritual
+17. Use Orbis Terrae reagent for maximum radius
+18. Farm meteors -- each costs 1B LP but Armok Orb auto-refills
+19. Process: Raw Tengam → EM Separator → Purified Tengam → Polarizer (UHV) → Attuned Tengam
+
+### Phase 6: Endgame
+20. With Gaia Spirit bees + Tengam from meteors, craft the Tengam Electromagnet and progress
 
 ---
 
