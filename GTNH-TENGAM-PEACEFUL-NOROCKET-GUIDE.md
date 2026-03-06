@@ -446,43 +446,165 @@ Each Rune of the Orb adds **+4% of base capacity**.
 
 ---
 
-## 4. RECOMMENDED OVERALL STRATEGY
+## 4. METEOR RITUAL AUTOMATION (How to Summon Thousands of Meteors)
+
+### Why You Need Thousands
+
+Tengam ore is the **filler block** in the Ion Thruster Jet meteor at weight 1, competing with salt (weight 72). Each meteor gives minimal Tengam. Per the GTNH wiki: "You'll need to spawn this meteor tens of thousands of times." Automation is not optional.
+
+### Ritual Mechanics (Source Code Analysis)
+
+**Key finding from `RitualEffectSummonMeteor.java`:**
+
+1. **Focus item detection (lines 41-48):** The ritual scans for `EntityItem` (dropped items) in a 1x1x1 area directly above the Master Ritual Stone (y+1 to y+2). The focus item must be a DROPPED ITEM on the block, not placed in a GUI.
+
+2. **One-shot deactivation (line 79):** `ritualStone.setActive(false)` — the ritual **deactivates after each single meteor**. You must re-activate it every time.
+
+3. **No cooldown (lines 37-39):** Cooldown is reset to 0 each tick. You can re-activate immediately after the meteor spawns.
+
+4. **Focus item consumed (line 70):** `stack.stackSize--` — one focus item consumed per meteor. If the stack has multiple items, only one is used.
+
+5. **LP check (lines 54-58):** If soul network has insufficient LP, the ritual gives Nausea and does nothing (doesn't consume the item).
+
+### Automation: Autonomous Activator + Dropper + Timer
+
+**Critical finding from `TEMasterStone.java` and `BlockMasterStone.java`:**
+
+The `activateRitual()` method (TEMasterStone.java:204-297) and `startRitual()` (RitualEffect.java:16-18) have **NO `isTruePlayer` checks**. Unlike the Gaia Guardian, ritual activation works fine with FakePlayer entities. An **Autonomous Activator** (Extra Utilities) holding an **Awakened Activation Crystal** CAN re-activate the meteor ritual.
+
+**Setup diagram:**
+```
+     [Timer/Clock]
+         |
+    [Dropper] ←── Ion Thruster Jet supply (AE2/logistics)
+         |
+         v
+  [MRS]  ← Focus item drops here (y+1 above stone)
+         |
+    [Autonomous Activator] ← Awakened Activation Crystal inside
+         |
+         v
+    Meteor spawns at y=257, falls to ritual location
+```
+
+**Automation cycle (each ~5 seconds):**
+1. Dropper places 1x Ion Thruster Jet as entity on top of MRS
+2. Short delay (1-2 seconds for item to settle)
+3. Autonomous Activator right-clicks MRS with Awakened Crystal → ritual activates
+4. Ritual detects focus item → syphons 1,000,000,001 LP → spawns meteor entity at y=257
+5. Ritual deactivates → meteor falls and impacts (creates ore sphere)
+6. Timer resets → cycle repeats
+
+**Per cycle cost:**
+- 1x Ion Thruster Jet (consumed)
+- 100,000 LP (ritual activation) + 1,000,000,001 LP (meteor cost) = ~1B LP total
+- Armok Orb auto-refills to 1B instantly — effectively free
+
+### Maximizing Tengam Yield: Orbis Terrae
+
+**From `MeteorParadigm.java`:** Each Orbis Terrae reagent (1,000 aspect ratio per unit) increases the meteor radius by **+2 blocks**. The base radius is 7 (from the JSON config). More radius = exponentially more filler blocks (volume scales as r³).
+
+| Orbis Terrae | Radius | Volume (approx) | Filler blocks | Tengam (est.) |
+|---|---|---|---|---|
+| 0 | 7 | ~1,437 | ~1,400 | ~19 |
+| 1 | 9 | ~3,054 | ~3,000 | ~41 |
+| 2 | 11 | ~5,575 | ~5,500 | ~75 |
+| 3 | 13 | ~9,203 | ~9,100 | ~124 |
+
+(Tengam at weight 1/73 of filler ≈ 1.37% of blocks)
+
+**To supply Orbis Terrae:** Fill the MRS's reagent tanks before each activation using Alchemical Relay pipes.
+
+### Parallelization: Multiple Rituals
+
+Nothing in the source code prevents multiple Mark of the Falling Tower rituals from operating simultaneously. Build several ritual setups with their own Autonomous Activators, spread far apart (meteors create explosions). Each one independently consumes focus items and LP.
+
+**Warning:** Each meteor creates explosions on impact. Place rituals far from your base (100+ blocks). Use obsidian or warded blocks around the ritual stones.
+
+### Focus Item Bottleneck: Ion Thruster Jet Production
+
+The true bottleneck is crafting thousands of Ion Thruster Jets:
+- **Block:** `GalacticraftAmunRa:tile.machines2:1` (Ion Thruster Jet)
+- **Craft:** Assembly Line recipe at UHV tier
+- **Prerequisite:** Scan a T1 Rocket Engine Jet in a Research Station
+
+Set up automated Assembly Line production with full AE2/logistics support. Each meteor consumes exactly 1 Ion Thruster Jet.
+
+### Tengam Processing Chain (post-mining)
+
+```
+Raw Tengam Ore (from meteor)
+    → Macerator → Raw Tengam Dust
+        → Electromagnetic Separator → Purified Tengam Dust
+            (+ 10% Neodymium Magnetic, 10% Samarium Magnetic byproducts)
+            → Polarizer (UHV tier) → Attuned Tengam Dust
+```
+
+---
+
+## 5. RECOMMENDED OVERALL STRATEGY
+
+### The Fastest Path (for `/gamerule doMobSpawning false` players)
+
+**Minimum Gaia Guardian kills needed: 1 normal + 0 hard mode** (for Armok Orb path only)
+**Optional: 1+ hard mode kills** (for Dice of Fate, enables infinite Gaia Spirit via bees)
 
 ### Phase 1: Blood Magic Bootstrap (EV tier)
 1. Start with manual self-sacrifice (Sacrificial Knife + Incense Altar with Obsidian path)
 2. Build up to Tier 4 Blood Altar
-3. Build EEC multiblock
+3. Build EEC multiblock (480 EU/t)
 
 ### Phase 2: Automated LP Generation
-4. Set up EEC + Well of Suffering in Ritual Mode
-5. Net +2,300 LP/sec passively
-6. Build up to Tier 5-6 Blood Altar with Runes of the Orb
+4. Set up EEC + Well of Suffering in Ritual Mode → net +2,300 LP/sec passively
+5. Build up to Tier 5-6 Blood Altar with Runes of the Orb
+6. Accumulate LP for ritual infrastructure (Transcendent Blood Orb = 30M base capacity)
 
-### Phase 3: Gaia Spirit (THE ROOT BOTTLENECK -- gates BOTH itself AND Tengam)
-7. Switch to Easy + `/gamerule doMobSpawning false` (recommended)
-8. Kill Gaia Guardian (normal) for Life Essence + Gaia Guardian II (hard) for Dice of Fate
-9. Use Sword of the Cosmos for instant kills
-10. Make Gaia Spirit frame, breed Gaia Spirit bees (NAQUADAH x TERRASTEEL, 1% chance)
-11. LCR: Gaia Spirit Combs + Dice of Fate → Life Essence (infinite chain established)
+### Phase 3: Gaia Spirit (THE ROOT BOTTLENECK)
+7. Switch to Easy + `/gamerule doMobSpawning false` (preserves peaceful gameplay, enables boss summoning)
+8. **Minimum path:** Kill Gaia Guardian (normal mode) once → 8 Gaia Spirit
+   - Use **Sword of the Cosmos** for instant kill (`victim.setHealth(0)` bypasses the Guardian's 40-damage cap)
+   - Confirmed in `ItemSwordInfinity.java:59`: Cosmos Sword calls `hitEntity()` which sets HP to 0 directly
+   - The Guardian's `attackEntityFrom()` returns `true` for real player damage (line 384), so `hitEntity()` IS triggered
+9. **Optional but recommended:** Kill Gaia Guardian II (hard mode) → 16 Gaia Spirit + **1 Dice of Fate**
+   - Dice of Fate enables infinite Gaia Spirit via bee LCR chain
+   - Each Dice is consumed per LCR use (`ItemComb.java:1350`), so stockpile several
+10. **If going bee route:** Make Gaia Spirit frame, breed GAIASPIRIT bees (NAQUADAH x TERRASTEEL, 1% mutation)
+11. **Bee LCR:** 4x GS Combs + 4x Pixie Dust + 1x Dice of Fate + Elementium/Terrasteel → 4-6 Gaia Spirit
 
-### Phase 4: Armok Orb (Required for Tengam meteor)
-12. Craft Black Hole Talisman (requires Gaia Spirit)
-13. Craft Blood Orb of Armok (Extreme Crafting Table 9x9, requires Black Hole Talisman + many endgame components)
-14. Armok Orb auto-fills soul network to 1,000,000,000 LP
+### Phase 4: Armok Orb (Required for 1B LP Tengam meteor)
+12. Craft Black Hole Talisman: 1x Gaia Spirit + 3x Elementium + 1x Ender Air Bottle (`ModCraftingRecipes.java:1805`)
+13. Craft Blood Orb of Armok (Extreme Crafting Table 9x9, `ScriptAvaritia.java:413`):
+    - 7x Infinity Plate, 2x Eldritch Orb, 2x Blood Infused Diamond Block
+    - 11x Cosmic Neutronium Plate, 1x Focus of Time, 1x Infinity Catalyst
+    - 1x Focus of Eldritch, 1x Neutronium Large Plate, 1x Black Hole Talisman
+    - 2x Sigil of Elemental Affinity
+14. Armok Orb auto-fills soul network to 1,000,000,000 LP instantly
 
-### Phase 5: Tengam Meteor Farming (requires Armok Orb)
-15. Craft Ion Thruster Jet (Assembly Line, UHV tier)
-16. Set up Mark of the Falling Tower ritual
-17. Use Orbis Terrae reagent for maximum radius
-18. Farm meteors -- each costs 1B LP but Armok Orb auto-refills
-19. Process: Raw Tengam → EM Separator → Purified Tengam → Polarizer (UHV) → Attuned Tengam
+### Phase 5: Tengam Meteor Farming (the grind)
+15. Build Mark of the Falling Tower ritual (100 Ritual Stones: 32 air, 16 water, 20 fire, 20 earth, 12 dusk)
+16. Set up automation: Autonomous Activator + Dropper + Timer + AE2 supply chain
+17. Craft Ion Thruster Jets in bulk (Assembly Line, UHV)
+18. Supply Orbis Terrae reagent for maximum radius (critical for yield)
+19. **Run multiple parallel rituals** for higher throughput
+20. Process: Raw Tengam Ore → Macerator → EM Separator → Polarizer (UHV) → Attuned Tengam Dust
 
 ### Phase 6: Endgame
-20. With Gaia Spirit bees + Tengam from meteors, craft the Tengam Electromagnet and progress
+21. Craft Tengam Electromagnet and other UHV+ components
+22. With Gaia Spirit bees (if established) + Tengam from meteors, UHV tier is fully accessible
+
+### Strict Pacifist Path (NO kills, NO self-harm)
+
+**Gaia Spirit and Tengam are COMPLETELY UNOBTAINABLE.** This is a confirmed hard wall. See Section 2 for exhaustive proof.
+
+- Every Gaia Spirit source traces back to killing the Gaia Guardian (confirmed across all game systems)
+- Blood Magic requires sacrifice to generate any LP at all
+- Without LP: no altar, no rituals, no meteors
+- The GTNH Challenge Run wiki states: "many challenge types may make the full pack progression impossible to complete"
+- **Peaceful + No Rockets + Strict Pacifist = cannot reach UHV**
 
 ---
 
-## 5. KEY SOURCE CODE REFERENCES
+## 6. KEY SOURCE CODE REFERENCES
 
 | File | Content |
 |------|---------|
@@ -499,7 +621,14 @@ Each Rune of the Orb adds **+4% of base capacity**.
 | `NewHorizonsCoreMod/.../ForgeHammerRecipes.java:121` | Gaia Block → 32x Life Essence |
 | `Avaritia/.../ItemOrbArmok.java` | Blood Orb of Armok (infinite LP) |
 | `Avaritia/.../Bloody.java` | Armok Orb registration |
+| `Avaritia/.../ItemSwordInfinity.java:40` | Sword of the Cosmos hitEntity() instant kill |
 | `NewHorizonsCoreMod/.../ScriptAvaritia.java:413` | GTNH Armok Orb recipe (Extreme Crafting) |
+| `BloodMagic/.../TEMasterStone.java:204` | Ritual activation (no FakePlayer check) |
+| `BloodMagic/.../BlockMasterStone.java:56` | MRS right-click → activateRitual() |
+| `Botania/.../ModCraftingRecipes.java:1805` | Black Hole Talisman recipe (1x Gaia Spirit) |
+| `Botania/.../EntityDoppleganger.java:384` | attackEntityFrom returns true → hitEntity triggers |
+| `Botania/.../EntityDoppleganger.java:525` | Peaceful mode instant despawn check |
+| `GT5-Unofficial/.../ItemComb.java:1350` | Dice of Fate consumed in LCR Gaia Spirit recipe |
 | `GT-New-Horizons-Modpack/config/BloodMagic/meteors/BotGaia.json` | Gaia Spirit meteor (circular, 1B LP) |
 | `GT-New-Horizons-Modpack/config/BloodMagic/meteors/CheatyVeryLowQuantityRawTengam.json` | Alt Tengam meteor (needs space) |
 | `GT-New-Horizons-Modpack/config/BloodMagic/meteors/T9Ores.json` | T9 meteor w/ Tengam (Space Elevator focus) |
