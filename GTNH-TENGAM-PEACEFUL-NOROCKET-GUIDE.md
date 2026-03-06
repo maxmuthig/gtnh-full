@@ -9,7 +9,7 @@
 - **Gaia Spirit**: The ROOT BLOCKER. Cannot fight Gaia Guardian on peaceful. "Life Essence" in Botania = "Gaia Spirit" (same item, internal vs display name). Every path to obtain it traces back to killing the Gaia Guardian.
 - **Tengam**: ONLY obtainable via Blood Magic Meteor Ritual (Ion Thruster Jet focus). **BUT** the meteor costs **1,000,000,001 LP**, which requires the **Blood Orb of Armok** (Avaritia). The Armok Orb requires **Gaia Spirit** to craft. Therefore, **Tengam is ALSO gated behind Gaia Spirit**.
 - **STRICT PACIFIST NOTE**: If you won't harm ANY living being (including self-sacrifice and the Gaia Guardian), both Gaia Spirit AND Tengam are **completely unobtainable**. No loot bags, no quest rewards (confirmed via quest DB analysis), no Blood Magic meteors (circular), no synthesis recipes exist.
-- **Infinite Blood LP**: EEC + Well of Suffering works on peaceful (2,500 LP/sec). Self-sacrifice for bootstrapping. **But** max LP with T6 altar + Transcendent Orb is ~390M (with all rune slots as Runes of the Orb). Only the **Armok Orb** (requires Gaia Spirit) can reach 1B LP for the Tengam meteor.
+- **Infinite Blood LP**: Self-sacrifice, Ritual of the Feathered Knife, and Well of Suffering (with passive mobs/villagers) all work on peaceful. EEC Ritual Mode provides +2,500 LP/sec passively. **But** max LP with T6 altar + Transcendent Orb is **250.8M** (all 184 rune slots as Runes of the Orb: `30M × 8.36`). Only the **Armok Orb** (requires Gaia Spirit) can reach 1B LP for the Tengam meteor.
 
 ---
 
@@ -23,9 +23,9 @@ The **Ion Thruster Jet meteor** (`CheatyVeryLowQuantityRawTengam.json`) contains
 
 The meteor config has `"cost": 1000000001` (1,000,000,001 LP). This is syphoned directly from the soul network per summon. Analysis of LP capacity limits:
 
-| Orb | Base LP | Max with ~300 Runes of the Orb | Enough for 1B+1? |
+| Orb | Base LP | Max with all 184 Runes of the Orb | Enough for 1B+1? |
 |-----|---------|-------------------------------|----------------|
-| Transcendent Blood Orb (T6) | 30,000,000 | ~390,000,000 | NO |
+| Transcendent Blood Orb (T6) | 30,000,000 | 250,800,000 (30M × 8.36) | NO |
 | Blood Orb of Armok (in inventory) | 1,000,000,000 | 1,000,000,000 | **NO (1 LP SHORT!)** |
 | Blood Orb of Armok (in altar + 1 Rune of Orb) | 1,000,000,000 | 1,040,000,000 | YES |
 
@@ -33,7 +33,7 @@ The meteor config has `"cost": 1000000001` (1,000,000,001 LP). This is syphoned 
 
 **The solution:** Place the Armok Orb **in a Blood Altar with at least 1 Rune of the Orb**. The altar uses `getMaxEssence() * orbCapacityMultiplier` as the network maximum (`TEAltar.java:637`). With 1 rune: `1B * 1.04 = 1,040,000,000` LP — enough.
 
-**The math for Transcendent Orb:** `orbCapacityMultiplier = 1 + 0.04 × runeCount`. To reach 1B with a 30M orb: need `1B/30M ≈ 33.3` multiplier → need `808+ Runes of the Orb`. A T6 altar has ~200-300 total rune slots (across ALL rune types), so this is **physically impossible**.
+**The math for Transcendent Orb:** `orbCapacityMultiplier = 1 + 0.04 × runeCount`. To reach 1B with a 30M orb: need `1B/30M ≈ 33.3` multiplier → need **810 Runes of the Orb**. A T6 altar has exactly **184 total rune slots** (T2: 4 → T3: 28 → T4: 56 → T5: 108 → T6: 184). Even with ALL 184 slots as Runes of the Orb: `30M × 8.36 = 250.8M LP` — still far short of 1B.
 
 **Therefore:** The Tengam meteor REQUIRES the **Blood Orb of Armok in a Blood Altar with Rune(s) of the Orb**, which requires **Gaia Spirit** to craft (Black Hole Talisman component). This means **Tengam is gated behind Gaia Spirit**.
 
@@ -236,7 +236,7 @@ A Blood Magic meteor config exists specifically for Botania Gaia materials:
 The `dreamcraft:Gaia` block is a compressed Gaia Spirit block that breaks down to **32x Gaia Spirit** via Forge Hammer + Prismatic Acid. However:
 
 1. **Focus item is Laputa Shard level 19** -- requires 19x Gaia Spirit to craft (1 per upgrade level from 0→19)
-2. **Cost is 1,000,000,001 LP** -- exceeds even Archmage's Blood Orb capacity (10M base). Would need ~100+ Runes of the Orb
+2. **Cost is 1,000,000,001 LP** -- exceeds even Transcendent Blood Orb max capacity (250.8M with all 184 rune slots). Requires Blood Orb of Armok
 3. **Gaia Spirit blocks have weight 2 out of ~542** -- only ~0.4% of the meteor's blocks
 
 **CONCLUSION:** Circular dependency (need Gaia Spirit to get Gaia Spirit) AND prohibitively expensive.
