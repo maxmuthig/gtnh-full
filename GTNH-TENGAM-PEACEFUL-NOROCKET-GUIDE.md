@@ -8,7 +8,7 @@
 
 - **Tengam**: ONLY obtainable via Blood Magic Meteor Ritual (Mark of the Falling Tower) in a rocketless run
 - **Gaia Spirit**: The HARD BLOCKER. Cannot fight Gaia Guardian on peaceful. "Life Essence" in Botania = "Gaia Spirit" (same item, internal vs display name). Every path to obtain it traces back to killing the Gaia Guardian.
-- **STRICT PACIFIST NOTE**: If you won't harm ANY living being (including self-sacrifice and the Gaia Guardian), Gaia Spirit is **completely unobtainable**. No loot bags, no quest rewards, no crafting-from-scratch recipes exist in the source code.
+- **STRICT PACIFIST NOTE**: If you won't harm ANY living being (including self-sacrifice and the Gaia Guardian), Gaia Spirit is **completely unobtainable**. No loot bags, no quest rewards (confirmed via quest DB analysis), no Blood Magic meteors (circular dependency), no crafting-from-scratch recipes exist.
 - **Infinite Blood LP**: EEC + Well of Suffering works on peaceful (2,500 LP/sec). Self-sacrifice for bootstrapping. **But self-sacrifice harms the player** -- may conflict with strict pacifism.
 
 ---
@@ -43,6 +43,22 @@ The **Ion Thruster Jet meteor** contains **Raw Tengam Ore as its filler block**.
 ### Source 2: Seth (Tier 9 Planet) -- BLOCKED (No Rockets)
 
 Seth is a moon in the Amun-Ra system. Primary source of Raw Tengam Ore veins (height 30-180, weight 80, size 32). Requires a Mothership or Space Elevator. **Not available in no-rocket runs.**
+
+### Source 2b: "Cheaty" Tengam Meteor -- BLOCKED (Requires Space)
+
+**File:** `GT-New-Horizons-Modpack/config/BloodMagic/meteors/CheatyVeryLowQuantityRawTengam.json`
+- Contains `oreTengamRaw:1` as filler (very low quantity, hence the name)
+- **Focus item:** `GalacticraftAmunRa:tile.machines2:1` -- requires Amun-Ra mod (space travel)
+- **Cost:** 1,000,000,001 LP
+- **BLOCKED** for both no-rocket AND LP cost reasons
+
+### Source 2c: T9 Ores Meteor -- BLOCKED (Deep Endgame)
+
+**File:** `GT-New-Horizons-Modpack/config/BloodMagic/meteors/T9Ores.json`
+- Contains `oreTengamRaw:1` alongside Draconium Awakened, Neodymium, Samarium, Nether Star
+- **Focus item:** `gregtech:gt.blockmachines:14009` = **Space Elevator Module Miner T3**
+- **Cost:** 1,000,000,001 LP
+- **BLOCKED** -- requires Space Elevator (deep endgame, far past where you need Tengam)
 
 ### Source 3: Space Miner MK-III Drones -- BLOCKED (Requires Tengam to build)
 
@@ -147,6 +163,12 @@ But the Gaia Block is made from:
 ```
 Still circular.
 
+### Path E0: ExtraUtilities Peaceful Table -- DISABLED IN GTNH
+
+ExtraUtilities has a "Peaceful Table" that can produce mob drops without mobs. However, **GTNH explicitly disables it**:
+- `GT-New-Horizons-Modpack/config/ExtraUtilities.cfg`: `PeacefultableEnabled=false`, `peacefulTableInAllDifficulties=false`
+- Not a viable path.
+
 ### Path E: EEC (Extreme Entity Crusher) with ignorePeacefulCheck config -- POSSIBLE WORKAROUND
 
 The EEC has a config option (`Config.MobHandler.ignorePeacefulCheck`, default: `false`) that, when set to `true`, allows processing hostile mob recipes on peaceful.
@@ -159,16 +181,42 @@ if (!recipe.recipe.isPeacefulAllowed && world.difficultySetting == PEACEFUL && !
 
 **However:** The Gaia Guardian explicitly rejects damage from non-real players (`isTruePlayer` check at EntityDoppleganger.java:390 rejects FakePlayer instances). The EEC uses fake players internally, so **the Gaia Guardian cannot be killed by the EEC** even with this config enabled.
 
-### Path F: Quest Book Rewards -- UNVERIFIED
+### Path F: Quest Book Rewards -- CONFIRMED: NO GAIA SPIRIT REWARDS
 
-The GTNH quest book data is stored in runtime config files not present in source code. It's possible that Life Essence or Gaia Spirit appears as a quest reward. **Check NEI and the quest book in-game** for any quests that reward:
-- Life Essence (Botania manaResource:5)
-- Gaia Ingot (Botania manaResource:14)
-- Gaia Spirit Dust (dustGaiaSpirit)
+**Quest database analyzed** (`GT-New-Horizons-Modpack/config/betterquesting/`). Every Flower Power quest referencing `manaResource` was checked:
 
-### Path G: Loot Bags -- UNVERIFIED
+- **"Round One... FIGHT!"** (quest #3231): REQUIRES 1x Gaia Spirit to complete. Reward: only CoinFlowerIII x10. **No Gaia Spirit rewarded.**
+- **"Round Two... FIGHT!"** (quest #3241): REQUIRES 1x Gaia Spirit Ingot + Dice of Fate. Reward: only CoinFlowerIII x15. **No Gaia Spirit rewarded.**
+- **"LAPUTA XX"** (endgame quest): Rewards 1x GaiaSpirit NUGGET (`gt.metaitem.01:9205`). But REQUIRES a Laputa Shard level 19, which needs 19x Gaia Spirit to craft (1 per upgrade level). **Circular -- costs 19 to gain 1/9th.**
+- **All other Flower Power quests**: Reward coins, Terrasteel, Pixie Dust, Dragonstone, or mushrooms. **No Gaia Spirit.**
 
-Enhanced Loot Bags content is configured at runtime. Check NEI for whether any loot bag tier contains Life Essence or Gaia Spirit items. Based on source code analysis, **no hardcoded loot bag entries for these items were found.**
+**CONCLUSION:** No quest provides Gaia Spirit without already having it.
+
+### Path G: Loot Bags -- CONFIRMED: NO GAIA SPIRIT IN LOOT BAGS
+
+Enhanced Loot Bags content checked in `ScriptEnhancedLootBags.java` -- **no Gaia Spirit in any loot tier**. Thaumcraft's rare bag loot table also checked (see `CLAUDE.md` for decompilation details) -- only vanilla Thaumcraft items, no Botania items.
+
+### Path G2: Blood Magic BotGaia Meteor -- CIRCULAR DEPENDENCY
+
+A Blood Magic meteor config exists specifically for Botania Gaia materials:
+
+**File:** `GT-New-Horizons-Modpack/config/BloodMagic/meteors/BotGaia.json`
+```json
+{
+  "ores": ["Botania:customBrick:4:90", ..., "dreamcraft:Gaia:0:2"],
+  "radius": 7,
+  "cost": 1000000001,
+  "focusItem": "Botania:laputaShard:19"
+}
+```
+
+The `dreamcraft:Gaia` block is a compressed Gaia Spirit block that breaks down to **32x Gaia Spirit** via Forge Hammer + Prismatic Acid. However:
+
+1. **Focus item is Laputa Shard level 19** -- requires 19x Gaia Spirit to craft (1 per upgrade level from 0→19)
+2. **Cost is 1,000,000,001 LP** -- exceeds even Archmage's Blood Orb capacity (10M base). Would need ~100+ Runes of the Orb
+3. **Gaia Spirit blocks have weight 2 out of ~542** -- only ~0.4% of the meteor's blocks
+
+**CONCLUSION:** Circular dependency (need Gaia Spirit to get Gaia Spirit) AND prohibitively expensive.
 
 ### Path H: Use `/gamerule doMobSpawning false` Instead of Peaceful -- BEST WORKAROUND
 
@@ -213,8 +261,9 @@ Minecraft allows changing difficulty at any time. You could:
   - Boss fight: Requires killing the Gaia Guardian (BLOCKED - pacifist)
   - Bees: Require Gaia Spirit frame + Dice of Fate (BLOCKED - circular + requires boss kill)
   - Mixer/Forge Hammer: Require existing Gaia Spirit as input (BLOCKED - circular)
-  - Loot bags: Gaia Spirit not in any loot table (`ScriptEnhancedLootBags.java` confirmed)
-  - Quest rewards: No Gaia Spirit found in quest configurations
+  - Loot bags: Gaia Spirit not in any loot table (Enhanced Loot Bags + Thaumcraft bags confirmed)
+  - Quest rewards: Exhaustive quest DB search confirms no Gaia Spirit rewards (LAPUTA XX gives 1 nugget but costs 19 Gaia Spirit — circular)
+  - Blood Magic BotGaia meteor: Contains Gaia blocks but focus item requires 19 Gaia Spirit (circular) + costs 1B LP
   - GregTech synthesis: GaiaSpirit material has no component elements (formula `Gs`, no decomposition)
   - EEC: Cannot kill the Gaia Guardian (FakePlayer rejected by `isTruePlayer` check)
 - **Conclusion:** Gaia Spirit and everything depending on it (Gaia Ingot, Gaia plates, etc.) is a HARD WALL for strict pacifist play.
@@ -434,3 +483,12 @@ Each Rune of the Orb adds **+4% of base capacity**.
 | `Avaritia/.../ItemOrbArmok.java` | Blood Orb of Armok (infinite LP) |
 | `Avaritia/.../Bloody.java` | Armok Orb registration |
 | `NewHorizonsCoreMod/.../ScriptAvaritia.java:413` | GTNH Armok Orb recipe (Extreme Crafting) |
+| `GT-New-Horizons-Modpack/config/BloodMagic/meteors/BotGaia.json` | Gaia Spirit meteor (circular, 1B LP) |
+| `GT-New-Horizons-Modpack/config/BloodMagic/meteors/CheatyVeryLowQuantityRawTengam.json` | Alt Tengam meteor (needs space) |
+| `GT-New-Horizons-Modpack/config/BloodMagic/meteors/T9Ores.json` | T9 meteor w/ Tengam (Space Elevator focus) |
+| `GT-New-Horizons-Modpack/config/betterquesting/.../LAPUTAXX-*.json` | LAPUTA XX quest (1 GS nugget, costs 19 GS) |
+| `GT-New-Horizons-Modpack/config/ExtraUtilities.cfg:30` | Peaceful Table DISABLED in GTNH |
+| `GT-New-Horizons-Modpack/config/Botania.cfg:120` | Built-in recipes disabled (expert mode) |
+| `NewHorizonsCoreMod/.../BlockList.java:63` | dreamcraft:Gaia block definition |
+| `NewHorizonsCoreMod/.../FluidSolidifierRecipes.java:122` | Gaia Block crafting (Bifrost + molten GS) |
+| `GT5-Unofficial/.../MaterialsInit.java:14104` | GaiaSpirit material (ID 205, no components) |
