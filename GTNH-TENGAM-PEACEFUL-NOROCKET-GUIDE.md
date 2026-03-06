@@ -495,6 +495,22 @@ The `activateRitual()` method (TEMasterStone.java:204-297) and `startRitual()` (
 5. Ritual deactivates → meteor falls and impacts (creates ore sphere)
 6. Timer resets → cycle repeats
 
+**CRITICAL: Redstone kills the ritual** (`TEMasterStone.java:353-366`):
+- If ANY redstone power reaches the MRS block, the ritual immediately breaks (`RitualBreakMethod.REDSTONE`)
+- The Timer/Clock must ONLY power the Dropper and Autonomous Activator, NEVER the MRS
+- Use indirect redstone routing (e.g., run redstone dust around the MRS, not through it)
+- The Dropper should NOT be directly adjacent to MRS if it could leak redstone power
+
+**Activation Crystal is NOT consumed** (`ActivationCrystal.java:60`):
+- The Awakened Activation Crystal is reusable indefinitely
+- It must be pre-bound to a player (right-click while holding) — the soul network used is the CRYSTAL OWNER's, not the FakePlayer's (`BlockMasterStone.java:83`: `IBindable.getOwnerName(playerItem)`)
+- The Armok Orb must be in the crystal owner's inventory for auto-refill to work
+
+**MRS has NO inventory interface** (no IInventory, no ISidedInventory):
+- Hoppers, AE2 buses, and pipes CANNOT insert items directly
+- Focus items MUST be dropped as EntityItem entities (Dropper/Dispenser does this correctly)
+- The ritual scans for EntityItem in a 1x1x1 area above the stone
+
 **Per cycle cost:**
 - 1x Ion Thruster Jet (consumed)
 - 100,000 LP (ritual activation) + 1,000,000,001 LP (meteor cost) = ~1B LP total
