@@ -101,13 +101,14 @@ Normal drops: 8-16x Life Essence per kill (hard mode: 16).
 **Production:** Gaia Spirit Combs (CombType.GAIASPIRIT, 15% base chance)
 
 **LCR Processing (LuV tier):**
-- Recipe 1: 4x Gaia Spirit Combs + 4x Pixie Dust + 1x Dice + 4L Elven Elementium → **4x Life Essence**
-- Recipe 2: 4x Gaia Spirit Combs + 4x Pixie Dust + 1x Dice + 2L Terrasteel → **6x Life Essence**
+- Recipe 1: 4x Gaia Spirit Combs + 4x Pixie Dust + 1x **Dice of Fate** + 4L Elven Elementium → **4x Life Essence**
+- Recipe 2: 4x Gaia Spirit Combs + 4x Pixie Dust + 1x **Dice of Fate** + 2L Terrasteel → **6x Life Essence**
 
-**THE CIRCULAR DEPENDENCY PROBLEM:**
-To breed this bee, you need a `frameGtGaiaSpirit` block. To make that frame, you need Gaia Spirit material. To make Gaia Spirit, you need Life Essence. To get Life Essence, you need this bee (or the boss).
+**DOUBLE CIRCULAR DEPENDENCY:**
+1. **Frame dependency:** Breeding the bee requires a `frameGtGaiaSpirit` block adjacent to the apiary → needs Gaia Spirit material → needs Life Essence → needs the boss
+2. **Dice of Fate dependency:** The LCR recipes require a **Dice of Fate**, which ONLY drops from **Gaia Guardian II (hard mode)**. This means even if you somehow got the bee, you can't process the combs without having killed the hard-mode boss.
 
-**BOOTSTRAP SOLUTION:** You need to obtain ONE Gaia Spirit ingot/dust from an alternative source to break the cycle. See Path C and D below.
+**CONCLUSION:** The bee path has TWO independent circular dependencies back to the Gaia Guardian. It is NOT a viable bootstrap path.
 
 ### Path C: Mixer Recipe -- NEEDS LIFE ESSENCE (Circular)
 
@@ -139,7 +140,7 @@ if (!recipe.recipe.isPeacefulAllowed && world.difficultySetting == PEACEFUL && !
     return "EEC_peaceful";
 ```
 
-**However:** The Gaia Guardian is a boss mob and is unlikely to be registered as a standard EEC recipe. Even with this config, the Gaia Guardian probably won't work in the EEC. Needs in-game verification.
+**However:** The Gaia Guardian explicitly rejects damage from non-real players (`isTruePlayer` check at EntityDoppleganger.java:390 rejects FakePlayer instances). The EEC uses fake players internally, so **the Gaia Guardian cannot be killed by the EEC** even with this config enabled.
 
 ### Path F: Quest Book Rewards -- UNVERIFIED
 
@@ -152,7 +153,21 @@ The GTNH quest book data is stored in runtime config files not present in source
 
 Enhanced Loot Bags content is configured at runtime. Check NEI for whether any loot bag tier contains Life Essence or Gaia Spirit items. Based on source code analysis, **no hardcoded loot bag entries for these items were found.**
 
-### Path H: Temporarily Switch Difficulty -- THE NUCLEAR OPTION
+### Path H: Use `/gamerule doMobSpawning false` Instead of Peaceful -- BEST WORKAROUND
+
+The Gaia Guardian checks `world.difficultySetting == EnumDifficulty.PEACEFUL`, NOT the `doMobSpawning` gamerule. This means:
+
+1. Set difficulty to **Easy** (or Normal/Hard)
+2. Run `/gamerule doMobSpawning false`
+3. No hostile mobs will naturally spawn (same effect as peaceful for day-to-day play)
+4. But the Gaia Guardian CAN be ritual-summoned because difficulty is not Peaceful
+5. Kill it, get Life Essence, done
+
+**This preserves the spirit of peaceful play** (no random hostile mobs) while allowing ritual-summoned bosses. If your challenge rules define "peaceful" as "no hostile mob spawns" rather than "difficulty locked to Peaceful", this is the cleanest solution.
+
+**Tip:** Use the **Sword of the Cosmos** (Avaritia) for a one-hit kill -- "all it takes is one hit and the fight is over" (per GTNH wiki).
+
+### Path I: Temporarily Switch Difficulty -- THE NUCLEAR OPTION
 
 Minecraft allows changing difficulty at any time. You could:
 1. Switch to Easy/Normal
@@ -161,18 +176,25 @@ Minecraft allows changing difficulty at any time. You could:
 4. Use the Life Essence to make 1 Gaia Spirit Ingot → 1 frameGtGaiaSpirit
 5. Bootstrap Gaia Spirit bees for infinite production
 
-**This breaks the "peaceful challenge" rules.** But it's worth noting that a SINGLE difficulty switch for ONE boss kill would unlock the entire Gaia Spirit chain permanently. If your challenge allows a one-time exception, this is by far the most efficient path.
+**This breaks the "peaceful challenge" rules.** But a SINGLE difficulty switch for ONE boss kill would unlock the entire Gaia Spirit chain permanently. However, the bee path also needs a Dice of Fate (Gaia Guardian II hard mode drop), so you'd need to kill the hard-mode guardian too.
 
-### RECOMMENDED STRATEGY (Strict Peaceful)
+**Note:** The GTNH Challenge Run wiki page explicitly states: "many challenge types may make the full pack progression impossible to complete." Peaceful + No Rockets is one of the hardest combinations.
 
-1. **Check NEI and quest book** for any source of Life Essence or Gaia Spirit (quest rewards, loot bags)
-2. If none exist, check if `ignorePeacefulCheck` config + EEC works for the Gaia Guardian
-3. If that fails, you may need the one-time difficulty switch (Path H)
-4. Once you have 4x Life Essence + 1x Terrasteel:
-   - Mixer: 4x Life Essence + 1x Terrasteel Dust → 1x Gaia Spirit Dust
-   - Process into a Gaia Spirit frame block
-   - Breed NAQUADAH x TERRASTEEL bees with the frame → Gaia Spirit bees
-   - LCR: Gaia Spirit Combs → Life Essence (infinite loop established)
+### RECOMMENDED STRATEGY
+
+**Option A: `/gamerule doMobSpawning false` approach (RECOMMENDED)**
+1. Switch difficulty to Easy, enable `/gamerule doMobSpawning false`
+2. No hostile mobs spawn naturally (same as peaceful gameplay)
+3. Summon Gaia Guardian (Normal mode) → get Life Essence
+4. Summon Gaia Guardian II (Hard mode) → get Dice of Fate
+5. Use Sword of the Cosmos for instant kills
+6. Make Gaia Spirit frame, breed Gaia Spirit bees
+7. LCR: Gaia Spirit Combs + Dice of Fate → Life Essence (infinite)
+
+**Option B: Strict Peaceful (may be impossible)**
+1. Check NEI and quest book for ANY source of Life Essence or Gaia Spirit
+2. No path was found in source code -- the GTNH wiki confirms this may block progression
+3. If no workaround exists, Gaia Spirit (and everything depending on it) is unobtainable
 
 ---
 
@@ -325,11 +347,11 @@ Each Rune of the Orb adds **+4% of base capacity**.
 6. Build up to Tier 5-6 Blood Altar with Runes of the Orb
 
 ### Phase 3: Gaia Spirit (THE BOTTLENECK)
-7. Check quest book and NEI for any non-boss source of Life Essence
-8. If none: consider one-time difficulty switch to Normal → kill Gaia Guardian → back to Peaceful
-9. Use Life Essence to make 1 Gaia Spirit frame
-10. Breed Gaia Spirit bees (NAQUADAH x TERRASTEEL, 1% chance)
-11. LCR: Gaia Spirit Combs → Life Essence (infinite chain established)
+7. Switch to Easy + `/gamerule doMobSpawning false` (recommended), or check quest book for Life Essence
+8. Kill Gaia Guardian (normal) for Life Essence + Gaia Guardian II (hard) for Dice of Fate
+9. Use Sword of the Cosmos for instant kills
+10. Make Gaia Spirit frame, breed Gaia Spirit bees (NAQUADAH x TERRASTEEL, 1% chance)
+11. LCR: Gaia Spirit Combs + Dice of Fate → Life Essence (infinite chain established)
 
 ### Phase 4: Tengam Meteor Farming
 12. Craft Ion Thruster Jet (Assembly Line)
