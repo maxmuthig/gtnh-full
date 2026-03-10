@@ -6,6 +6,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
 import com.recursive_pineapple.matter_manipulator.common.building.BlockSpec;
+import com.recursive_pineapple.matter_manipulator.common.building.Blueprint;
 import com.recursive_pineapple.matter_manipulator.common.data.WeightedSpecList;
 import com.recursive_pineapple.matter_manipulator.common.items.manipulator.MMState.BlockRemoveMode;
 import com.recursive_pineapple.matter_manipulator.common.items.manipulator.MMState.BlockSelectMode;
@@ -45,6 +46,10 @@ public class MMConfig {
     public Transform transform;
     /** The array size in repetitions */
     public Vector3i arraySpan;
+
+    /** Stored blueprint for reusable copy/paste. When set, overrides live region analysis. */
+    @Nullable
+    public Blueprint blueprint;
 
     public Location getCoordA(World world, Vector3i lookingAt) {
         if (coordAOffset == null) {
@@ -213,6 +218,24 @@ public class MMConfig {
     }
 
     public VoxelAABB getPasteVisualDeltas(World world, boolean transform) {
+        // Blueprint mode: use blueprint deltas with coordC as origin
+        if (blueprint != null && coordC != null) {
+            if (world != null && coordC.worldId != world.provider.dimensionId) return null;
+
+            Vector3i origin = coordC.toVec();
+            VoxelAABB aabb = new VoxelAABB(origin, new Vector3i(origin).add(blueprint.deltas));
+
+            if (arraySpan != null) {
+                aabb.scale(arraySpan.x, arraySpan.y, arraySpan.z);
+            }
+
+            if (transform && this.transform != null) {
+                this.transform.apply(aabb);
+            }
+
+            return aabb;
+        }
+
         if (!Location.areCompatible(coordA, coordB, coordC)) return null;
         if (world != null && coordA.worldId != world.provider.dimensionId) return null;
 
@@ -262,6 +285,7 @@ public class MMConfig {
         result = prime * result + ((replaceWith == null) ? 0 : replaceWith.hashCode());
         result = prime * result + ((transform == null) ? 0 : transform.hashCode());
         result = prime * result + ((arraySpan == null) ? 0 : arraySpan.hashCode());
+        result = prime * result + ((blueprint == null) ? 0 : blueprint.hashCode());
         return result;
     }
 
@@ -322,6 +346,9 @@ public class MMConfig {
         if (arraySpan == null) {
             if (other.arraySpan != null) return false;
         } else if (!arraySpan.equals(other.arraySpan)) return false;
+        if (blueprint == null) {
+            if (other.blueprint != null) return false;
+        } else if (!blueprint.equals(other.blueprint)) return false;
         return true;
     }
 }

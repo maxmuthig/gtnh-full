@@ -1407,6 +1407,22 @@ public class ItemMatterManipulator extends Item implements ISpecialElectricItem,
                 .onClicked(() -> {
                     Messages.MarkPaste.sendToServer();
                 })
+            .done()
+            .branch()
+                .label(StatCollector.translateToLocal("mm.gui.blueprints"))
+                .option()
+                    .label(StatCollector.translateToLocal("mm.gui.save_blueprint"))
+                    .onClicked(() -> {
+                        Messages.SaveBlueprint.sendToServer();
+                    })
+                .done()
+                .option()
+                    .label(StatCollector.translateToLocal("mm.gui.clear_blueprint"))
+                    .hidden(initialState.config.blueprint == null)
+                    .onClicked(() -> {
+                        Messages.ClearBlueprint.sendToServer();
+                    })
+                .done()
             .done();
     }
 

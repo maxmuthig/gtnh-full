@@ -323,9 +323,21 @@ public class MMState {
     }
 
     private List<PendingBlock> getAnalysis(World world) {
+        Location coordC = config.coordC;
+
+        // When a blueprint is loaded, use stored data instead of live analysis
+        if (config.blueprint != null && config.placeMode == PlaceMode.COPYING) {
+            if (coordC == null || !coordC.isInWorld(world)) { return new ArrayList<>(); }
+
+            RegionAnalysis analysis = new RegionAnalysis();
+            analysis.deltas = new Vector3i(config.blueprint.deltas);
+            analysis.blocks = config.blueprint.toPendingBlocks(coordC.worldId);
+
+            return applyTransformAndArray(analysis, coordC);
+        }
+
         Location coordA = config.coordA;
         Location coordB = config.coordB;
-        Location coordC = config.coordC;
 
         if (!Location.areCompatible(coordA, coordB, coordC) || !coordA.isInWorld(world)) { return new ArrayList<>(); }
 
@@ -334,63 +346,7 @@ public class MMState {
             .analyzeRegion(world, coordA, coordB, config.placeMode == PlaceMode.COPYING ? true : false);
 
         if (config.placeMode == PlaceMode.COPYING) {
-            Transform t = getTransform();
-
-            t.cacheRotation();
-
-            // apply rotation
-            for (PendingBlock block : analysis.blocks) {
-                Vector3i v = t.apply(block.toVec());
-
-                block.x = v.x;
-                block.y = v.y;
-                block.z = v.z;
-
-                block.transform(t);
-            }
-
-            // offset to the correct location (needs to be after rotating)
-            for (PendingBlock block : analysis.blocks) {
-                block.x += coordC.x;
-                block.y += coordC.y;
-                block.z += coordC.z;
-            }
-
-            // copy the blocks (arraying)
-            if (config.arraySpan != null) {
-                int sx = config.arraySpan.x;
-                int sy = config.arraySpan.y;
-                int sz = config.arraySpan.z;
-
-                List<PendingBlock> base = new ArrayList<>(analysis.blocks);
-                analysis.blocks.clear();
-
-                for (int y = Math.min(sy, 0); y <= Math.max(sy, 0); y++) {
-                    for (int z = Math.min(sz, 0); z <= Math.max(sz, 0); z++) {
-                        for (int x = Math.min(sx, 0); x <= Math.max(sx, 0); x++) {
-                            int dx = x * (analysis.deltas.x + (analysis.deltas.x < 0 ? -1 : 1));
-                            int dy = y * (analysis.deltas.y + (analysis.deltas.y < 0 ? -1 : 1));
-                            int dz = z * (analysis.deltas.z + (analysis.deltas.z < 0 ? -1 : 1));
-
-                            Vector3i d = new Vector3i(dx, dy, dz);
-
-                            t.apply(d);
-
-                            for (PendingBlock original : base) {
-                                PendingBlock dup = original.clone();
-                                dup.x += d.x;
-                                dup.y += d.y;
-                                dup.z += d.z;
-                                analysis.blocks.add(dup);
-                            }
-                        }
-                    }
-                }
-            }
-
-            analysis.deltas = t.apply(analysis.deltas);
-
-            t.uncacheRotation();
+            return applyTransformAndArray(analysis, coordC);
         } else {
             for (PendingBlock block : analysis.blocks) {
                 block.x += coordC.x;
@@ -398,6 +354,72 @@ public class MMState {
                 block.z += coordC.z;
             }
         }
+
+        return analysis.blocks;
+    }
+
+    /**
+     * Applies rotation, translation, and array stacking to an analysis result.
+     * Used by both live copy and blueprint paste.
+     */
+    private List<PendingBlock> applyTransformAndArray(RegionAnalysis analysis, Location coordC) {
+        Transform t = getTransform();
+
+        t.cacheRotation();
+
+        // apply rotation
+        for (PendingBlock block : analysis.blocks) {
+            Vector3i v = t.apply(block.toVec());
+
+            block.x = v.x;
+            block.y = v.y;
+            block.z = v.z;
+
+            block.transform(t);
+        }
+
+        // offset to the correct location (needs to be after rotating)
+        for (PendingBlock block : analysis.blocks) {
+            block.x += coordC.x;
+            block.y += coordC.y;
+            block.z += coordC.z;
+        }
+
+        // copy the blocks (arraying)
+        if (config.arraySpan != null) {
+            int sx = config.arraySpan.x;
+            int sy = config.arraySpan.y;
+            int sz = config.arraySpan.z;
+
+            List<PendingBlock> base = new ArrayList<>(analysis.blocks);
+            analysis.blocks.clear();
+
+            for (int y = Math.min(sy, 0); y <= Math.max(sy, 0); y++) {
+                for (int z = Math.min(sz, 0); z <= Math.max(sz, 0); z++) {
+                    for (int x = Math.min(sx, 0); x <= Math.max(sx, 0); x++) {
+                        int dx = x * (analysis.deltas.x + (analysis.deltas.x < 0 ? -1 : 1));
+                        int dy = y * (analysis.deltas.y + (analysis.deltas.y < 0 ? -1 : 1));
+                        int dz = z * (analysis.deltas.z + (analysis.deltas.z < 0 ? -1 : 1));
+
+                        Vector3i d = new Vector3i(dx, dy, dz);
+
+                        t.apply(d);
+
+                        for (PendingBlock original : base) {
+                            PendingBlock dup = original.clone();
+                            dup.x += d.x;
+                            dup.y += d.y;
+                            dup.z += d.z;
+                            analysis.blocks.add(dup);
+                        }
+                    }
+                }
+            }
+        }
+
+        analysis.deltas = t.apply(analysis.deltas);
+
+        t.uncacheRotation();
 
         return analysis.blocks;
     }

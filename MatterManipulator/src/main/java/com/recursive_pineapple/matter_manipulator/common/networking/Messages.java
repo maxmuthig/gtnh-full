@@ -30,6 +30,9 @@ import com.gtnewhorizons.modularui.common.internal.network.NetworkUtils;
 import com.recursive_pineapple.matter_manipulator.GlobalMMConfig.DebugConfig;
 import com.recursive_pineapple.matter_manipulator.MMMod;
 import com.recursive_pineapple.matter_manipulator.asm.Optional;
+import com.recursive_pineapple.matter_manipulator.common.building.BlockAnalyzer;
+import com.recursive_pineapple.matter_manipulator.common.building.BlockAnalyzer.RegionAnalysis;
+import com.recursive_pineapple.matter_manipulator.common.building.Blueprint;
 import com.recursive_pineapple.matter_manipulator.common.items.manipulator.ItemMatterManipulator;
 import com.recursive_pineapple.matter_manipulator.common.items.manipulator.Location;
 import com.recursive_pineapple.matter_manipulator.common.items.manipulator.MMRenderer;
@@ -395,6 +398,39 @@ public enum Messages {
             return packet;
         }
     })),
+    SaveBlueprint(server(simple((player, stack, manipulator, state) -> {
+        if (state.config.placeMode != PlaceMode.COPYING) {
+            MMUtils.sendErrorToPlayer(player, "Must be in copying mode to save a blueprint.");
+            return;
+        }
+
+        Location coordA = state.config.coordA;
+        Location coordB = state.config.coordB;
+
+        if (coordA == null || coordB == null || coordA.worldId != coordB.worldId
+            || coordA.worldId != player.worldObj.provider.dimensionId) {
+            MMUtils.sendErrorToPlayer(player, "Must have copy region (A and B) marked to save a blueprint.");
+            return;
+        }
+
+        RegionAnalysis analysis = BlockAnalyzer.analyzeRegion(player.worldObj, coordA, coordB, true);
+
+        if (analysis == null || analysis.blocks.isEmpty()) {
+            MMUtils.sendErrorToPlayer(player, "No blocks found in copy region.");
+            return;
+        }
+
+        state.config.blueprint = new Blueprint(analysis.deltas, analysis.blocks);
+
+        MMUtils.sendInfoToPlayer(
+            player,
+            String.format("Blueprint saved: %d blocks.", analysis.blocks.size())
+        );
+    }))),
+    ClearBlueprint(server(simple((player, stack, manipulator, state) -> {
+        state.config.blueprint = null;
+        MMUtils.sendInfoToPlayer(player, "Blueprint cleared.");
+    }))),
 
     ;
 

@@ -95,6 +95,9 @@ mm.gui.add_block=Add Block
 mm.gui.set_block=Set Block
 mm.gui.set_block_to_replace_with=Set Block To Replace With
 mm.gui.set_cable=Set Cable
+mm.gui.blueprints=Blueprints
+mm.gui.save_blueprint=Save Blueprint
+mm.gui.clear_blueprint=Clear Blueprint
 
 # InfoMessage
 
